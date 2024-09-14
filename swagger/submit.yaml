@@ -1,0 +1,24 @@
+post:
+  tags:
+    - waf
+  operationId: postSubmit
+  description: Submit a request payload to analyze
+  consumes:
+    - application/octet-stream
+  parameters:
+    - name: request
+      in: body
+      description: The request payload in binary format
+      required: true
+      schema:
+        type: string
+        format: binary
+  responses:
+    200:
+      description: the request is legit
+    403:
+      description: the request must be blocked
+    default:
+      description: generic error response
+      schema:
+        $ref: "#/definitions/error"

@@ -16,6 +16,9 @@ x-tagGroups:
   - name: Health Check
     tags:
       - health
+  - name: WAF
+    tags:
+      - waf
 consumes:
 - application/json
 produces:
@@ -26,6 +29,8 @@ basePath: "/api/v1"
 paths:
   /health:
     $ref: ./health.yaml
+  /submit:
+    $ref: ./submit.yaml
 
 
 definitions:

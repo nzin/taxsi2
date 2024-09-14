@@ -11,6 +11,7 @@
 //	Version: 1.0.0
 //
 //	Consumes:
+//	  - application/octet-stream
 //	  - application/json
 //
 //	Produces:

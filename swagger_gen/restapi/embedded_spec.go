@@ -57,82 +57,35 @@ func init() {
           }
         }
       }
-    }
-  },
-  "definitions": {
-    "error": {
-      "type": "object",
-      "required": [
-        "message"
-      ],
-      "properties": {
-        "message": {
-          "type": "string",
-          "minLength": 1
-        }
-      }
     },
-    "health": {
-      "type": "object",
-      "properties": {
-        "status": {
-          "type": "string"
-        }
-      }
-    }
-  },
-  "tags": [
-    {
-      "description": "Check if taxsi2 is healthy",
-      "name": "health"
-    }
-  ],
-  "x-tagGroups": [
-    {
-      "name": "taxsi2 Management",
-      "tags": [
-        "app"
-      ]
-    },
-    {
-      "name": "Health Check",
-      "tags": [
-        "health"
-      ]
-    }
-  ]
-}`))
-	FlatSwaggerJSON = json.RawMessage([]byte(`{
-  "consumes": [
-    "application/json"
-  ],
-  "produces": [
-    "application/json"
-  ],
-  "schemes": [
-    "http"
-  ],
-  "swagger": "2.0",
-  "info": {
-    "description": "taxsi2 is a WAF server application The base path for all the APIs is \"/api/v1\".\n",
-    "title": "taxsi2",
-    "version": "1.0.0"
-  },
-  "basePath": "/api/v1",
-  "paths": {
-    "/health": {
-      "get": {
-        "description": "Check if taxsi2 is healthy",
-        "tags": [
-          "health"
+    "/submit": {
+      "post": {
+        "description": "Submit a request payload to analyze",
+        "consumes": [
+          "application/octet-stream"
         ],
-        "operationId": "getHealth",
+        "tags": [
+          "waf"
+        ],
+        "operationId": "postSubmit",
+        "parameters": [
+          {
+            "description": "The request payload in binary format",
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "status of health check",
-            "schema": {
-              "$ref": "#/definitions/health"
-            }
+            "description": "the request is legit"
+          },
+          "403": {
+            "description": "the request must be blocked"
           },
           "default": {
             "description": "generic error response",
@@ -183,6 +136,141 @@ func init() {
       "name": "Health Check",
       "tags": [
         "health"
+      ]
+    },
+    {
+      "name": "WAF",
+      "tags": [
+        "waf"
+      ]
+    }
+  ]
+}`))
+	FlatSwaggerJSON = json.RawMessage([]byte(`{
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "http"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "description": "taxsi2 is a WAF server application The base path for all the APIs is \"/api/v1\".\n",
+    "title": "taxsi2",
+    "version": "1.0.0"
+  },
+  "basePath": "/api/v1",
+  "paths": {
+    "/health": {
+      "get": {
+        "description": "Check if taxsi2 is healthy",
+        "tags": [
+          "health"
+        ],
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "status of health check",
+            "schema": {
+              "$ref": "#/definitions/health"
+            }
+          },
+          "default": {
+            "description": "generic error response",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/submit": {
+      "post": {
+        "description": "Submit a request payload to analyze",
+        "consumes": [
+          "application/octet-stream"
+        ],
+        "tags": [
+          "waf"
+        ],
+        "operationId": "postSubmit",
+        "parameters": [
+          {
+            "description": "The request payload in binary format",
+            "name": "request",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the request is legit"
+          },
+          "403": {
+            "description": "the request must be blocked"
+          },
+          "default": {
+            "description": "generic error response",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "error": {
+      "type": "object",
+      "required": [
+        "message"
+      ],
+      "properties": {
+        "message": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "health": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "description": "Check if taxsi2 is healthy",
+      "name": "health"
+    }
+  ],
+  "x-tagGroups": [
+    {
+      "name": "taxsi2 Management",
+      "tags": [
+        "app"
+      ]
+    },
+    {
+      "name": "Health Check",
+      "tags": [
+        "health"
+      ]
+    },
+    {
+      "name": "WAF",
+      "tags": [
+        "waf"
       ]
     }
   ]

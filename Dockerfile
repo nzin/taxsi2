@@ -9,7 +9,7 @@ RUN make build
 ######################################
 # Copy from builder to debian image
 ######################################
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 RUN mkdir /app
 WORKDIR /app
 

@@ -20,6 +20,7 @@ import (
 	"github.com/go-openapi/swag"
 
 	"github.com/nzin/taxsi2/swagger_gen/restapi/operations/health"
+	"github.com/nzin/taxsi2/swagger_gen/restapi/operations/waf"
 )
 
 // NewTaxsi2API creates a new Taxsi2 instance
@@ -40,12 +41,16 @@ func NewTaxsi2API(spec *loads.Document) *Taxsi2API {
 		APIKeyAuthenticator: security.APIKeyAuth,
 		BearerAuthenticator: security.BearerAuth,
 
+		BinConsumer:  runtime.ByteStreamConsumer(),
 		JSONConsumer: runtime.JSONConsumer(),
 
 		JSONProducer: runtime.JSONProducer(),
 
 		HealthGetHealthHandler: health.GetHealthHandlerFunc(func(params health.GetHealthParams) middleware.Responder {
 			return middleware.NotImplemented("operation health.GetHealth has not yet been implemented")
+		}),
+		WafPostSubmitHandler: waf.PostSubmitHandlerFunc(func(params waf.PostSubmitParams) middleware.Responder {
+			return middleware.NotImplemented("operation waf.PostSubmit has not yet been implemented")
 		}),
 	}
 }
@@ -76,6 +81,9 @@ type Taxsi2API struct {
 	// It has a default implementation in the security package, however you can replace it for your particular usage.
 	BearerAuthenticator func(string, security.ScopedTokenAuthentication) runtime.Authenticator
 
+	// BinConsumer registers a consumer for the following mime types:
+	//   - application/octet-stream
+	BinConsumer runtime.Consumer
 	// JSONConsumer registers a consumer for the following mime types:
 	//   - application/json
 	JSONConsumer runtime.Consumer
@@ -86,6 +94,8 @@ type Taxsi2API struct {
 
 	// HealthGetHealthHandler sets the operation handler for the get health operation
 	HealthGetHealthHandler health.GetHealthHandler
+	// WafPostSubmitHandler sets the operation handler for the post submit operation
+	WafPostSubmitHandler waf.PostSubmitHandler
 
 	// ServeError is called when an error is received, there is a default handler
 	// but you can set your own with this
@@ -155,6 +165,9 @@ func (o *Taxsi2API) RegisterFormat(name string, format strfmt.Format, validator 
 func (o *Taxsi2API) Validate() error {
 	var unregistered []string
 
+	if o.BinConsumer == nil {
+		unregistered = append(unregistered, "BinConsumer")
+	}
 	if o.JSONConsumer == nil {
 		unregistered = append(unregistered, "JSONConsumer")
 	}
@@ -165,6 +178,9 @@ func (o *Taxsi2API) Validate() error {
 
 	if o.HealthGetHealthHandler == nil {
 		unregistered = append(unregistered, "health.GetHealthHandler")
+	}
+	if o.WafPostSubmitHandler == nil {
+		unregistered = append(unregistered, "waf.PostSubmitHandler")
 	}
 
 	if len(unregistered) > 0 {
@@ -195,6 +211,8 @@ func (o *Taxsi2API) ConsumersFor(mediaTypes []string) map[string]runtime.Consume
 	result := make(map[string]runtime.Consumer, len(mediaTypes))
 	for _, mt := range mediaTypes {
 		switch mt {
+		case "application/octet-stream":
+			result["application/octet-stream"] = o.BinConsumer
 		case "application/json":
 			result["application/json"] = o.JSONConsumer
 		}
@@ -258,6 +276,10 @@ func (o *Taxsi2API) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/health"] = health.NewGetHealth(o.context, o.HealthGetHealthHandler)
+	if o.handlers["POST"] == nil {
+		o.handlers["POST"] = make(map[string]http.Handler)
+	}
+	o.handlers["POST"]["/submit"] = waf.NewPostSubmit(o.context, o.WafPostSubmitHandler)
 }
 
 // Serve creates a http handler to serve the API over HTTP
