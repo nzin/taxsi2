@@ -1,0 +1,49 @@
+---
+swagger: "2.0"
+info:
+  description: >
+    taxsi2 is a WAF server application
+    The base path for all the APIs is "/api/v1".
+  title: taxsi2
+  version: 1.0.0
+tags:
+  - name: health
+    description: Check if taxsi2 is healthy
+x-tagGroups:
+  - name: taxsi2 Management
+    tags:
+      - app
+  - name: Health Check
+    tags:
+      - health
+consumes:
+- application/json
+produces:
+- application/json
+schemes:
+- http
+basePath: "/api/v1"
+paths:
+  /health:
+    $ref: ./health.yaml
+
+
+definitions:
+
+  # Health check
+  health:
+    type: object
+    properties:
+      status:
+        type: string
+
+  # Default Error
+  error:
+    type: object
+    required:
+      - message
+    properties:
+      message:
+        type: string
+        minLength: 1
+
