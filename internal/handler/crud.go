@@ -6,6 +6,9 @@ import (
 	"io"
 
 	"github.com/nzin/taxsi2/internal/com"
+	"github.com/nzin/taxsi2/internal/config"
+	"github.com/nzin/taxsi2/internal/db"
+	"github.com/nzin/taxsi2/internal/engine"
 	"github.com/nzin/taxsi2/swagger_gen/models"
 	"github.com/nzin/taxsi2/swagger_gen/restapi/operations/health"
 	"github.com/nzin/taxsi2/swagger_gen/restapi/operations/waf"
@@ -22,10 +25,37 @@ type CRUD interface {
 
 // NewCRUD creates a new CRUD instance
 func NewCRUD() CRUD {
-	return &crud{}
+	ds, err := db.NewDbService(
+		config.Config.DBDriver,
+		config.Config.DBConnectionStr,
+		config.Config.DBConnectionRetryAttempts,
+		config.Config.DBConnectionRetryDelay,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	e, err := engine.NewWafEngineImpl(
+		ds,
+		config.Config.WafOutput,
+		config.Config.WafOutputFormat,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	// TBD: register scan plugins
+
+	return &crud{
+		ds:        ds,
+		wafEngine: e,
+	}
 }
 
-type crud struct{}
+type crud struct {
+	ds        db.DbService
+	wafEngine engine.WafEngine
+}
 
 func (c *crud) GetHealthcheck(params health.GetHealthParams) middleware.Responder {
 	return health.NewGetHealthOK().WithPayload(&models.Health{Status: "OK"})
@@ -48,8 +78,8 @@ func (c *crud) PostSubmit(params waf.PostSubmitParams) middleware.Responder {
 		)
 	}
 
-	// test
-	if t.Method == "PATCH" {
+	res := c.wafEngine.Scan(t)
+	if !res {
 		return &waf.PostSubmitForbidden{}
 	}
 
