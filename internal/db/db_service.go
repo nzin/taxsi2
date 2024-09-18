@@ -37,10 +37,11 @@ type DbService interface {
 	Watch(stopChannel chan struct{})
 
 	GetConfigs() (map[string]string, error)
-
 	GetConfigValueForKey(key string) (string, error)
-
 	SetConfigValueForKey(key string, value string) error
+
+	GetGeoipCountries() (map[string]bool, error)
+	SetGeoipCountries(countryCodes []string, allow bool) error
 }
 
 type DbServiceImpl struct {

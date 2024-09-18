@@ -9,6 +9,7 @@ import (
 	"github.com/nzin/taxsi2/internal/config"
 	"github.com/nzin/taxsi2/internal/db"
 	"github.com/nzin/taxsi2/internal/engine"
+	"github.com/nzin/taxsi2/internal/engine/plugins/axsi"
 	"github.com/nzin/taxsi2/swagger_gen/models"
 	"github.com/nzin/taxsi2/swagger_gen/restapi/operations/health"
 	"github.com/nzin/taxsi2/swagger_gen/restapi/operations/waf"
@@ -44,7 +45,9 @@ func NewCRUD() CRUD {
 		panic(err)
 	}
 
-	// TBD: register scan plugins
+	// register scan plugins
+	axsi := axsi.NewAxiWafPlugin(ds)
+	e.RegisterPlugin(axsi)
 
 	return &crud{
 		ds:        ds,

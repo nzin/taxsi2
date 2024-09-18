@@ -4,6 +4,7 @@ import "gorm.io/gorm"
 
 const (
 	CHANGELOG_TABLE_CONFIG = iota
+	CHANGELOG_TABLE_GEOIP
 )
 
 type ChangeLog struct {
