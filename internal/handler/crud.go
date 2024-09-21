@@ -10,9 +10,11 @@ import (
 	"github.com/nzin/taxsi2/internal/db"
 	"github.com/nzin/taxsi2/internal/engine"
 	"github.com/nzin/taxsi2/internal/engine/plugins/axsi"
+	"github.com/nzin/taxsi2/internal/engine/plugins/geoip"
 	"github.com/nzin/taxsi2/swagger_gen/models"
 	"github.com/nzin/taxsi2/swagger_gen/restapi/operations/health"
 	"github.com/nzin/taxsi2/swagger_gen/restapi/operations/waf"
+	"github.com/sirupsen/logrus"
 
 	"github.com/go-openapi/runtime/middleware"
 )
@@ -46,8 +48,19 @@ func NewCRUD() CRUD {
 	}
 
 	// register scan plugins
+	geoipPlugin, err := geoip.NewGeoipWafPlugin(config.Config.DefaultGeoipDbPath, config.Config.DefaultRemoteGeoipDbPath, ds)
+	if err != nil {
+		logrus.Errorf("unable to create geoip plugin: %v", err)
+	} else {
+		e.RegisterPlugin(geoipPlugin)
+	}
+
 	axsi := axsi.NewAxiWafPlugin(ds)
 	e.RegisterPlugin(axsi)
+
+	// for later
+	// - botmanager?
+	// - ratelimiter?
 
 	return &crud{
 		ds:        ds,

@@ -60,4 +60,9 @@ var Config = struct {
 	  - {{.Scanresult}} (blocked, dryrun, pass)
 	*/
 	WafOutputFormat string `env:"TAXSI2_WAF_OUTPUT_FORMAT" envDefault:"{{.Remoteaddr}} {{.Method}} {{.UrlHostname}}:{{.UrlPath}} {{.Scanresult}}"`
+
+	// GeoipDbPath - path to the Geoip2-Country.mmdb
+	DefaultGeoipDbPath string `env:"TAXSI2_DEFAULT_GEOIP_DB_PATH" envDefault:"GeoLite2-Country.mmdb"`
+	// DefaultRemoteGeoipDbPath - path to the remote Geoip2-Country.mmdb with %d and %d for the year and month
+	DefaultRemoteGeoipDbPath string `env:"TAXSI2_DEFAULT_REMOTE_GEOIP_DB_PATH" envDefault:"https://download.db-ip.com/free/dbip-country-lite-%d-%d.mmdb.gz"`
 }{}

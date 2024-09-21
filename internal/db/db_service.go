@@ -16,16 +16,41 @@ import (
 var AutoMigrateTables = []interface{}{
 	ChangeLog{},
 	GlobalConfig{},
+	GeoipSource{},
+	GeoipCountry{},
 }
 
 type DbChangeListener interface {
 	NotifyDbChange(key string)
 }
 
-type DbService interface {
+type DbServiceSubscriber interface {
 	// Register to be notified when a changelog event
 	// occurs on a given table
 	SubscribeChanges(table int, listener DbChangeListener)
+}
+
+// Geoip plugin specific
+type DBServiceGeoip interface {
+	DbServiceSubscriber
+	GetGeoipCountries() (map[string]bool, error)
+	SetGeoipCountries(countryCodes []string, allow bool) error
+
+	GetGeoipSourceTimestamp() (time.Time, error)
+	GetGeoipSource() (*GeoipSource, error)
+	SetGeoipSource(timestamp time.Time, source []byte) error
+}
+
+// General WAF configuration
+type DbServiceConfig interface {
+	DbServiceSubscriber
+	GetConfigs() (map[string]string, error)
+	GetConfigValueForKey(key string) (string, error)
+	SetConfigValueForKey(key string, value string) error
+}
+
+type DbService interface {
+	DbServiceSubscriber
 
 	// NotifyChange create a ChangeLog row to notify
 	// to other nodes that there is a DB change
@@ -36,12 +61,8 @@ type DbService interface {
 	// check if there is any changelog
 	Watch(stopChannel chan struct{})
 
-	GetConfigs() (map[string]string, error)
-	GetConfigValueForKey(key string) (string, error)
-	SetConfigValueForKey(key string, value string) error
-
-	GetGeoipCountries() (map[string]bool, error)
-	SetGeoipCountries(countryCodes []string, allow bool) error
+	DbServiceConfig
+	DBServiceGeoip
 }
 
 type DbServiceImpl struct {
