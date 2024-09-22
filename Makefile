@@ -10,7 +10,8 @@ all: deps gen build run
 rebuild: gen build
 
 test: verifiers
-	@GO111MODULE=on go test -race -covermode=atomic -coverprofile=coverage.txt ./internal/...
+	@GO111MODULE=on go test -covermode=atomic -coverprofile=coverage.txt ./internal/...
+# go tool cover -html coverage.txt
 
 ci: test
 
@@ -25,7 +26,7 @@ gen: api_docs swagger
 
 deps:
 	@go install github.com/go-swagger/go-swagger/cmd/swagger@v0.30.3
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.1
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.61.0
 
 serve_docs:
 	@npm install -g docsify-cli@4

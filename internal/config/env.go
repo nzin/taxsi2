@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 // Config is the whole configuration of the app
 var Config = struct {
 	// Host - golang-skeleton server host
@@ -19,4 +21,48 @@ var Config = struct {
 	MiddlewareVerboseLoggerExcludeURLs []string `env:"TAXSI2_MIDDLEWARE_VERBOSE_LOGGER_EXCLUDE_URLS" envDefault:"" envSeparator:","`
 	// MiddlewareGzipEnabled - to enable gzip middleware
 	MiddlewareGzipEnabled bool `env:"TAXSI2_MIDDLEWARE_GZIP_ENABLED" envDefault:"true"`
+
+	/**
+	    DBDriver and DBConnectionStr define how we can write and read data.
+		For databases, taxsi2 supports sqlite3, mysql and postgres.
+
+		Examples
+		GOLANG_SKELETON_DBDRIVER     GOLANG_SKELETON_DBCONNECTIONSTR
+		=========================     =======================================
+		"sqlite3"                     "/tmp/file.db"
+		"sqlite3"                     ":memory"
+		"mysql"                       "root:@tcp(127.0.0.1:3306)/golangskeleton?parseTime=true"
+		"postgres"                    "host=localhost user=gorm password=gorm dbname=gorm port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+	*/
+	DBDriver                  string        `env:"TAXSI2_DBDRIVER" envDefault:"sqlite3"`
+	DBConnectionStr           string        `env:"TAXSI2_DBCONNECTIONSTR" envDefault:"golang-skeleton.sqlite3"`
+	DBConnectionRetryAttempts uint          `env:"TAXSI2_DBCONNECTION_RETRY_ATTEMPTS" envDefault:"9"`
+	DBConnectionRetryDelay    time.Duration `env:"TAXSI2_DBCONNECTION_RETRY_DELAY" envDefault:"100ms"`
+
+	/*
+		Output can be empty, or can contains a list of outputs that:
+		- start with "blocked:", "all:"
+		- continue with "logrus", "stdout", or a filename
+		For example
+		- "blocked:logrus"
+		- "all:/tmp/all.txt"
+	*/
+	WafOutput string `env:"TAXSI2_WAF_OUTPUT" envDefault:"blocked:logrus"`
+	/*
+	  we can use the different variables in the waf output format string:
+	  - {{.Date}} (human readable)
+	  - {{.Timestamp}} (UTC timestamp)
+	  - {{.Url}}
+	  - {{.UrlHostname}}
+	  - {{.UrlPath}}
+	  - {{.Method}}
+	  - {{.Remoteaddr}}
+	  - {{.Scanresult}} (blocked, dryrun, pass)
+	*/
+	WafOutputFormat string `env:"TAXSI2_WAF_OUTPUT_FORMAT" envDefault:"{{.Remoteaddr}} {{.Method}} {{.UrlHostname}}:{{.UrlPath}} {{.Scanresult}}"`
+
+	// GeoipDbPath - path to the Geoip2-Country.mmdb
+	DefaultGeoipDbPath string `env:"TAXSI2_DEFAULT_GEOIP_DB_PATH" envDefault:"GeoLite2-Country.mmdb"`
+	// DefaultRemoteGeoipDbPath - path to the remote Geoip2-Country.mmdb with %d and %d for the year and month
+	DefaultRemoteGeoipDbPath string `env:"TAXSI2_DEFAULT_REMOTE_GEOIP_DB_PATH" envDefault:"https://download.db-ip.com/free/dbip-country-lite-%d-%d.mmdb.gz"`
 }{}
