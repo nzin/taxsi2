@@ -51,6 +51,7 @@ const base64MmdContent = "AAABAAA0AAACAAAoAAADAACkAAAEAACkAAAFAAAlAAAGAACkAAAHAA
 type DbServiceGeoipMock struct {
 	timestamp time.Time
 	content   []byte
+	countries map[string]bool
 }
 
 func (dsgm *DbServiceGeoipMock) GetGeoipSourceTimestamp() (time.Time, error) {
@@ -68,7 +69,7 @@ func (dsgm *DbServiceGeoipMock) SetGeoipSource(timestamp time.Time, source []byt
 func (dsgm *DbServiceGeoipMock) SubscribeChanges(table int, listener db.DbChangeListener) {}
 
 func (dsgm *DbServiceGeoipMock) GetGeoipCountries() (map[string]bool, error) {
-	return nil, nil
+	return dsgm.countries, nil
 }
 
 func (dsgm *DbServiceGeoipMock) SetGeoipCountries(countryCodes []string, allow bool) error {
@@ -105,6 +106,7 @@ func TestInitMmdb(t *testing.T) {
 		ds := &DbServiceGeoipMock{
 			timestamp: time.Now(),
 			content:   data,
+			countries: make(map[string]bool),
 		}
 		mmdb, err := initMaxmindDb(ds, "/tmp/foobar.mmdb", server.URL+"/foobar-%d-%d.mmdb.gz")
 		assert.Nil(t, err)
@@ -141,6 +143,7 @@ func TestInitMmdb(t *testing.T) {
 		ds := &DbServiceGeoipMock{
 			timestamp: time.Now().Add(-32 * 24 * time.Hour),
 			content:   data,
+			countries: make(map[string]bool),
 		}
 		mmdb, err := initMaxmindDb(ds, "/tmp/foobar.mmdb", server.URL+"/foobar-%d-%d.mmdb.gz")
 		assert.Nil(t, err)
@@ -177,6 +180,7 @@ func TestInitMmdb(t *testing.T) {
 		ds := &DbServiceGeoipMock{
 			timestamp: time.Now().Add(-32 * 24 * time.Hour),
 			content:   []byte("foobar"),
+			countries: make(map[string]bool),
 		}
 
 		// let's create a tmp file
@@ -190,6 +194,29 @@ func TestInitMmdb(t *testing.T) {
 		assert.NotNil(t, mmdb)
 		assert.True(t, downloaded)
 	})
+
+	t.Run("test NewGeoipWafPlugin", func(t *testing.T) {
+		data, err := base64.StdEncoding.DecodeString(base64MmdContent)
+		assert.Nil(t, err)
+
+		// let's get from the DB, to the http server to the file
+		ds := &DbServiceGeoipMock{
+			timestamp: time.Now(),
+			content:   data,
+			countries: make(map[string]bool),
+		}
+		ds.countries["UK"] = true
+
+		// not downloaded, the timestamp is recent
+		plugin, err := NewGeoipWafPlugin("/tmp/foobar.mmdb", "http://localhost:12345/foobar-%d-%d.mmdb.gz", ds)
+		assert.Nil(t, err)
+		assert.NotNil(t, plugin)
+		assert.NotNil(t, plugin.(*GeoipWafPlugin).geoipdb)
+		assert.NotNil(t, plugin.(*GeoipWafPlugin).allowDenyTable)
+		assert.Equal(t, 1, len(plugin.(*GeoipWafPlugin).allowDenyTable))
+		assert.True(t, plugin.(*GeoipWafPlugin).allowMode)
+	})
+
 }
 
 func TestScan(t *testing.T) {
@@ -200,6 +227,7 @@ func TestScan(t *testing.T) {
 		ds := &DbServiceGeoipMock{
 			timestamp: time.Now(),
 			content:   data,
+			countries: make(map[string]bool),
 		}
 		mmdb, err := maxminddb.FromBytes(data)
 		assert.Nil(t, err)
@@ -232,6 +260,7 @@ func TestScan(t *testing.T) {
 		ds := &DbServiceGeoipMock{
 			timestamp: time.Now(),
 			content:   data,
+			countries: make(map[string]bool),
 		}
 		mmdb, err := maxminddb.FromBytes(data)
 		assert.Nil(t, err)
@@ -255,5 +284,35 @@ func TestScan(t *testing.T) {
 
 		assert.True(t, res)
 
+	})
+}
+
+func TestNotification(t *testing.T) {
+	t.Run("happy path: receive notification db change", func(t *testing.T) {
+		data, err := base64.StdEncoding.DecodeString(base64MmdContent)
+		assert.Nil(t, err)
+
+		ds := &DbServiceGeoipMock{
+			timestamp: time.Now(),
+			content:   data,
+			countries: make(map[string]bool),
+		}
+		ds.countries["UK"] = true
+
+		mmdb, err := maxminddb.FromBytes(data)
+		assert.Nil(t, err)
+
+		// empty allow/deny list -> pass
+		plugin := &GeoipWafPlugin{
+			ds:             ds,
+			allowDenyTable: map[string]bool{"FR": false},
+			allowMode:      false,
+			geoipdb:        mmdb,
+		}
+
+		plugin.NotifyDbChange("allow")
+		assert.Equal(t, 1, len(plugin.allowDenyTable))
+		assert.Equal(t, true, plugin.allowDenyTable["UK"])
+		assert.Equal(t, true, plugin.allowMode)
 	})
 }

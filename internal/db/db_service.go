@@ -94,6 +94,8 @@ func NewDbService(dbtype string, dsn string, retryAttempt uint, retryDelay time.
 				db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 					Logger: logger,
 				})
+			default:
+				return fmt.Errorf("unsupported db type %s. We support only 'postgres', 'sqlite3' or 'mysql'", dbtype)
 			}
 			return err
 		},
@@ -104,15 +106,18 @@ func NewDbService(dbtype string, dsn string, retryAttempt uint, retryDelay time.
 		return nil, err
 	}
 
-	// let's load the last change log
-	var lastChangeLog ChangeLog
-	err = db.Order("id desc").First(&lastChangeLog).Error
+	err = db.AutoMigrate(AutoMigrateTables...)
 	if err != nil {
 		return nil, err
 	}
 
-	err = db.AutoMigrate(AutoMigrateTables...)
-	if err != nil {
+	// let's load the last change log
+	var lastChangeLog ChangeLog
+	err = db.Order("id desc").First(&lastChangeLog).Error
+	if err == gorm.ErrRecordNotFound {
+		lastChangeLog.ID = 0
+	}
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
 
@@ -122,7 +127,7 @@ func NewDbService(dbtype string, dsn string, retryAttempt uint, retryDelay time.
 		changelogSubscribers: make(map[int][]DbChangeListener),
 	}
 
-	return dbservice, err
+	return dbservice, nil
 }
 
 func (ds *DbServiceImpl) Watch(stopChannel chan struct{}) {

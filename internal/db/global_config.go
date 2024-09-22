@@ -40,7 +40,7 @@ func (ds *DbServiceImpl) SetConfigValueForKey(key string, value string) error {
 		Value: value,
 	}
 
-	err := ds.db.Save(config).Error
+	err := ds.db.Where(&GlobalConfig{Key: key}).Save(config).Error
 	if err != nil {
 		return err
 	}

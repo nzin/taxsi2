@@ -42,7 +42,7 @@ func (ds *DbServiceImpl) SetGeoipSource(timestamp time.Time, source []byte) erro
 	ds.db.Unscoped().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&GeoipSource{})
 
 	gs := GeoipSource{
-		Timestamp: time.Now(),
+		Timestamp: timestamp,
 		Source:    source,
 	}
 	return ds.db.Create(&gs).Error
