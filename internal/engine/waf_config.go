@@ -13,14 +13,14 @@ import (
 Taxsi2 main (global) configuration
 */
 type WafConfig struct {
-	ds            db.DbService
+	ds            db.DbServiceConfig
 	Mode          string // enabled, dryrun, disabled. (learning in the future?)
 	EnabledPlugin map[string]bool
 	AllowList     []*net.IPNet
 	DenyList      []*net.IPNet
 }
 
-func NewWafConfig(ds db.DbService) (*WafConfig, error) {
+func NewWafConfig(ds db.DbServiceConfig) (*WafConfig, error) {
 
 	wc := WafConfig{
 		ds:            ds,
@@ -174,6 +174,5 @@ func (wc *WafConfig) EnablePlugin(pluginname string, enable bool) error {
 	if !enable {
 		e = "disabled"
 	}
-	wc.ds.SetConfigValueForKey("plugin_"+pluginname, e)
-	return nil
+	return wc.ds.SetConfigValueForKey("plugin_"+pluginname, e)
 }
